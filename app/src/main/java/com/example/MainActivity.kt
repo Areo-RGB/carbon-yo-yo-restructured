@@ -13,6 +13,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -54,7 +55,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowCompat
 import androidx.webkit.WebViewAssetLoader
-import androidx.webkit.WebViewClientCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.example.ui.theme.MyApplicationTheme
@@ -174,9 +174,9 @@ fun ImmersiveWebViewScreen(
             mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
           }
 
-          webViewClient = object : WebViewClientCompat() {
+          webViewClient = object : WebViewClient() {
             override fun shouldInterceptRequest(
-              view: WebView?,
+              view: WebView,
               request: WebResourceRequest
             ): WebResourceResponse? {
               return assetLoader.shouldInterceptRequest(request.url)
@@ -184,10 +184,10 @@ fun ImmersiveWebViewScreen(
             }
 
             override fun shouldOverrideUrlLoading(
-              view: WebView?,
-              request: WebResourceRequest?
+              view: WebView,
+              request: WebResourceRequest
             ): Boolean {
-              val uri = request?.url ?: return false
+              val uri = request.url
 
               // Keep the bundled app inside this WebView. Open real external links normally.
               if (uri.scheme == "https" && uri.host == LOCAL_APP_HOST) {
@@ -195,7 +195,7 @@ fun ImmersiveWebViewScreen(
               }
 
               return try {
-                view?.context?.startActivity(Intent(Intent.ACTION_VIEW, uri))
+                view.context.startActivity(Intent(Intent.ACTION_VIEW, uri))
                 true
               } catch (_: Exception) {
                 false
@@ -215,12 +215,12 @@ fun ImmersiveWebViewScreen(
             }
 
             override fun onReceivedError(
-              view: WebView?,
-              request: WebResourceRequest?,
-              error: WebResourceError?
+              view: WebView,
+              request: WebResourceRequest,
+              error: WebResourceError
             ) {
               super.onReceivedError(view, request, error)
-              if (request?.isForMainFrame == true) {
+              if (request.isForMainFrame) {
                 isLoading = false
                 hasLoadError = true
               }
