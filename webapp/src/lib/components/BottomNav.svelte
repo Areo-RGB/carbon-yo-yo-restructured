@@ -11,7 +11,7 @@
   const mobileItems = navItems.filter((item) => ['startup', 'setup', 'live', 'leaderboard', 'history'].includes(item.id));
 </script>
 
-<nav class="bottom-nav" aria-label="Mobile navigation">
+<nav class="bottom-nav" aria-label="Footer navigation">
   {#each mobileItems as item (item.id)}
     <button class:active={active === item.id} onclick={() => onSelect(item.id)}>{item.short}</button>
   {/each}

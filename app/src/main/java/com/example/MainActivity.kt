@@ -3,6 +3,7 @@ package com.example
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.Bitmap
+import android.media.AudioManager
 import android.os.Build
 import android.os.Bundle
 import android.view.ViewGroup
@@ -66,6 +67,7 @@ class MainActivity : ComponentActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+    volumeControlStream = AudioManager.STREAM_MUSIC
     setupImmersiveFullscreen()
 
     setContent {
@@ -95,6 +97,7 @@ class MainActivity : ComponentActivity() {
   }
 
   private fun setupImmersiveFullscreen() {
+    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     WindowCompat.setDecorFitsSystemWindows(window, false)
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
