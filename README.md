@@ -71,3 +71,4 @@ npm run build
 - Vite is configured with `base: './'`, so generated JS/CSS paths work when the app is hosted under the Android asset path.
 - Public audio/avatar URLs are relative, so the same web build works both in a normal web deployment and inside the Android WebView.
 - `app/src/main/assets/webapp/index.html` initially contains a small placeholder. Running `npm run android:build` replaces it with the real compiled app.
+# carbon-yo-yo-restructured
