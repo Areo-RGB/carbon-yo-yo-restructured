@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.DS_Store
+# IDE - keep tasks but ignore other configs
+.vscode/*
+!.vscode/tasks.json
+.opencode/
+.claude/

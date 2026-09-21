@@ -1,0 +1,8 @@
+{
+  "name": "Yo-Yo Fitness Tracker",
+  "description": "Yo-Yo Intermittent Recovery and Beep Test fitness tracking web app (Svelte + Carbon)",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Carbon Yo-Yo",
+  "description": "Immersive distraction-free fullscreen viewer for Carbon Yo-Yo.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
