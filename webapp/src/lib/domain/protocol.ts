@@ -79,8 +79,8 @@ function createYoYoShuttles(): TestShuttle[] {
 function createBeepShuttles(): TestShuttle[] {
   // 20 m multistage shuttle (Beep Test) matching the bundled beep_test.m4a:
   // Level 1 at 8.0 km/h, Level 2 at 9.0 km/h, then +0.5 km/h per level.
-  // Shuttle counts per level verified against the audio beeps
-  // (audio 00:10.215 = test time 00:00.000, start of Level 1 Shuttle 1).
+  // Shuttle counts per level verified against the audio beeps.
+  // Audio 00:01.215 starts Level 1 Shuttle 1; 00:10.215 starts Shuttle 2.
   const stages: Array<[number, number, number]> = [
     [1, 8.0, 7], [2, 9.0, 8], [3, 9.5, 8], [4, 10.0, 9],
     [5, 10.5, 9], [6, 11.0, 10], [7, 11.5, 10], [8, 12.0, 11],
