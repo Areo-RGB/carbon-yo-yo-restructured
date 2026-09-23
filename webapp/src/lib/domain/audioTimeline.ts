@@ -1,22 +1,21 @@
 import type { TestType } from './protocol.ts';
 
 /**
- * Offset between the bundled Beep Test media timeline and protocol time.
- * Level 1 Shuttle 1 starts at audio 00:01.215. The following cue is at
- * 00:10.215, exactly one 9-second shuttle later.
+ * Media intro offsets between each bundled recording and protocol time.
+ * Beep Test Level 1 Shuttle 1 starts at audio 00:01.215. The Yo-Yo
+ * recording's first Level 5 cue follows its 11.9465-second spoken intro.
  */
 export const BEEP_TEST_OFFSET_MS = 1_215;
+export const YOYO_TEST_OFFSET_MS = 11_947;
 
 export function protocolElapsedFromMediaMs(type: TestType, mediaMs: number): number {
   const safeMediaMs = Number.isFinite(mediaMs) ? Math.max(0, mediaMs) : 0;
-  return type === 'beepTest'
-    ? Math.max(0, safeMediaMs - BEEP_TEST_OFFSET_MS)
-    : safeMediaMs;
+  const offsetMs = type === 'beepTest' ? BEEP_TEST_OFFSET_MS : YOYO_TEST_OFFSET_MS;
+  return Math.max(0, safeMediaMs - offsetMs);
 }
 
 export function mediaElapsedFromProtocolMs(type: TestType, protocolMs: number): number {
   const safeProtocolMs = Number.isFinite(protocolMs) ? Math.max(0, protocolMs) : 0;
-  return type === 'beepTest'
-    ? safeProtocolMs + BEEP_TEST_OFFSET_MS
-    : safeProtocolMs;
+  const offsetMs = type === 'beepTest' ? BEEP_TEST_OFFSET_MS : YOYO_TEST_OFFSET_MS;
+  return safeProtocolMs + offsetMs;
 }

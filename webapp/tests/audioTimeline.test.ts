@@ -15,6 +15,7 @@ test('Beep Test media starts protocol time on the first Level 1 cue', () => {
 
 test('audio and protocol timeline conversion round-trips', () => {
   assert.equal(mediaElapsedFromProtocolMs('beepTest', 9_000), 10_215);
-  assert.equal(protocolElapsedFromMediaMs('yoyoIR1', 9_000), 9_000);
-  assert.equal(mediaElapsedFromProtocolMs('yoyoIR1', 9_000), 9_000);
+  assert.equal(protocolElapsedFromMediaMs('yoyoIR1', 11_946), 0);
+  assert.equal(protocolElapsedFromMediaMs('yoyoIR1', 20_947), 9_000);
+  assert.equal(mediaElapsedFromProtocolMs('yoyoIR1', 9_000), 20_947);
 });

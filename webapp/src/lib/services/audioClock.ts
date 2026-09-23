@@ -1,6 +1,7 @@
 import type { TestType } from '$lib/domain/protocol.ts';
 import {
   BEEP_TEST_OFFSET_MS,
+  YOYO_TEST_OFFSET_MS,
   mediaElapsedFromProtocolMs,
   protocolElapsedFromMediaMs
 } from '$lib/domain/audioTimeline.ts';
@@ -8,8 +9,12 @@ import {
   AUDIO_CONFIGS,
   loadAndCacheAudio
 } from '$lib/services/audioCache.ts';
-
-export { BEEP_TEST_OFFSET_MS } from '$lib/domain/audioTimeline.ts';
+/**
+ * The first Yo-Yo cue is at audio 00:11.947 and the first Beep Test cue is
+ * at 00:01.215; both map to
+ * protocol time 00:00.000.
+ */
+export { BEEP_TEST_OFFSET_MS, YOYO_TEST_OFFSET_MS } from '$lib/domain/audioTimeline.ts';
 
 /**
  * Protocol clock driven by the protocol audio files:
@@ -83,14 +88,14 @@ export class ProtocolAudioClock {
     this.updateGain();
   }
 
-  async start(type: TestType): Promise<void> {
+  async start(type: TestType, initialElapsedMs = 0): Promise<void> {
     await this.load(type);
     if (this.context?.state === 'suspended') await this.context.resume();
-    this.fallbackOffsetMs = 0;
+    this.fallbackOffsetMs = Math.max(0, initialElapsedMs);
     this.fallbackStartedAt = performance.now();
     this.playing = true;
 
-    this.audio.currentTime = 0;
+    this.audio.currentTime = mediaElapsedFromProtocolMs(type, this.fallbackOffsetMs) / 1000;
     try {
       await this.audio.play();
     } catch (error) {
