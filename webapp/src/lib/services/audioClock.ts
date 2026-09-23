@@ -3,13 +3,19 @@ import {
   AUDIO_CONFIGS,
   loadAndCacheAudio
 } from '$lib/services/audioCache.ts';
+import {
+  BEEP_TEST_OFFSET_MS,
+  YOYO_TEST_OFFSET_MS,
+  audioPositionForProtocolElapsed,
+  protocolElapsedForAudioPosition
+} from '$lib/services/audioTiming.ts';
 
 /**
- * Offset between the Beep Test media timeline and protocol time.
- * The first actual test beep sounds at audio 00:10.215, which is the start
- * of Level 1 Shuttle 1 (test time 00:00.000).
+ * Media intro offsets are kept in audioTiming.ts. The first Yo-Yo cue is at
+ * audio 00:11.947 and the first Beep Test cue is at 00:10.215; both map to
+ * protocol time 00:00.000.
  */
-export const BEEP_TEST_OFFSET_MS = 10_215;
+export { BEEP_TEST_OFFSET_MS, YOYO_TEST_OFFSET_MS };
 
 /**
  * Protocol clock driven by the protocol audio files:
@@ -83,14 +89,14 @@ export class ProtocolAudioClock {
     this.updateGain();
   }
 
-  async start(type: TestType): Promise<void> {
+  async start(type: TestType, initialElapsedMs = 0): Promise<void> {
     await this.load(type);
     if (this.context?.state === 'suspended') await this.context.resume();
-    this.fallbackOffsetMs = 0;
+    this.fallbackOffsetMs = Math.max(0, initialElapsedMs);
     this.fallbackStartedAt = performance.now();
     this.playing = true;
 
-    this.audio.currentTime = 0;
+    this.audio.currentTime = audioPositionForProtocolElapsed(type, this.fallbackOffsetMs) / 1000;
     try {
       await this.audio.play();
     } catch (error) {
@@ -103,11 +109,9 @@ export class ProtocolAudioClock {
     this.fallbackStartedAt = performance.now();
     this.playing = true;
 
-    // Seek the media back to the paused protocol position (re-adding the
-    // Beep Test intro offset) so beeps and UI stay aligned after a pause.
-    const audioSeconds = this.mode === 'beepTest'
-      ? (this.fallbackOffsetMs + BEEP_TEST_OFFSET_MS) / 1000
-      : this.fallbackOffsetMs / 1000;
+    // Seek the media back to the paused protocol position, re-adding the
+    // recording's intro offset so beeps and UI stay aligned after a pause.
+    const audioSeconds = audioPositionForProtocolElapsed(this.mode, this.fallbackOffsetMs) / 1000;
     if (Number.isFinite(audioSeconds) && audioSeconds >= 0) {
       try { this.audio.currentTime = audioSeconds; } catch { /* keep current position */ }
     }
@@ -130,11 +134,7 @@ export class ProtocolAudioClock {
   elapsedMs(): number {
     if (!this.audio.paused && Number.isFinite(this.audio.currentTime)) {
       const audioMs = Math.max(0, this.audio.currentTime * 1000);
-      if (this.mode === 'beepTest') {
-        // Clamp the pre-start intro to test time zero (Level 1 Shuttle 1).
-        return Math.max(0, audioMs - BEEP_TEST_OFFSET_MS);
-      }
-      return audioMs;
+      return protocolElapsedForAudioPosition(this.mode, audioMs);
     }
     return this.fallbackOffsetMs + (this.playing ? performance.now() - this.fallbackStartedAt : 0);
   }

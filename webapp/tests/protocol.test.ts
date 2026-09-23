@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { getProtocol } from '../src/lib/domain/protocol.ts';
+import { getProtocol, getStartLevelOptions } from '../src/lib/domain/protocol.ts';
 import { deriveRuntime, protocolDurationMs } from '../src/lib/domain/runtime.ts';
 
 test('Yo-Yo IR1 golden protocol table has 91 repetitions and 3640 m', () => {
@@ -21,6 +21,30 @@ test('Yo-Yo IR1 golden protocol table has 91 repetitions and 3640 m', () => {
 test('Yo-Yo IR1 total duration matches the corrected audio schedule', () => {
   const p = getProtocol('yoyoIR1');
   assert.ok(Math.abs(protocolDurationMs(p) - 1_724_581) <= 1);
+});
+
+test('Yo-Yo start-level options expose one option per speed level in table order', () => {
+  const options = getStartLevelOptions(getProtocol('yoyoIR1'));
+
+  assert.deepEqual(
+    options.map(({ speedLevel, speedKmh, shuttleNumber }) => [speedLevel, speedKmh, shuttleNumber]),
+    [
+      [5, 10.0, 1], [9, 12.0, 2], [11, 13.0, 3], [12, 13.5, 5],
+      [13, 14.0, 8], [14, 14.5, 12], [15, 15.0, 20], [16, 15.5, 28],
+      [17, 16.0, 36], [18, 16.5, 44], [19, 17.0, 52], [20, 17.5, 60],
+      [21, 18.0, 68], [22, 18.5, 76], [23, 19.0, 84]
+    ]
+  );
+});
+
+test('Yo-Yo start-level options map to the first beep of each selected stage', () => {
+  const options = getStartLevelOptions(getProtocol('yoyoIR1'));
+
+  assert.equal(options[0].startElapsedMs, 0);
+  assert.equal(options[1].startElapsedMs, 24_400);
+  assert.equal(options[2].startElapsedMs, 46_400);
+  assert.equal(options[3].startElapsedMs, 88_554);
+  assert.equal(options.at(-1)?.startElapsedMs, 1_583_949);
 });
 
 test('Yo-Yo runtime boundaries do not award a shuttle before it completes', () => {

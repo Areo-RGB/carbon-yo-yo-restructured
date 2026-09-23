@@ -12,6 +12,15 @@ export interface TestShuttle {
   levelDisplay: string;
 }
 
+export interface StartLevelOption {
+  speedLevel: number;
+  speedKmh: number;
+  shuttleNumber: number;
+  startShuttleIndex: number;
+  startElapsedMs: number;
+  label: string;
+}
+
 export interface ProtocolDefinition {
   type: TestType;
   displayName: string;
@@ -155,4 +164,28 @@ export const PROTOCOLS: Record<TestType, ProtocolDefinition> = {
 
 export function getProtocol(type: TestType): ProtocolDefinition {
   return PROTOCOLS[type];
+}
+
+export function getStartLevelOptions(protocol: ProtocolDefinition): StartLevelOption[] {
+  const seenLevels = new Set<number>();
+  let elapsedMs = 0;
+  const options: StartLevelOption[] = [];
+
+  for (let index = 0; index < protocol.shuttles.length; index += 1) {
+    const shuttle = protocol.shuttles[index];
+    if (!seenLevels.has(shuttle.speedLevel)) {
+      seenLevels.add(shuttle.speedLevel);
+      options.push({
+        speedLevel: shuttle.speedLevel,
+        speedKmh: shuttle.speedKmh,
+        shuttleNumber: shuttle.shuttleNumber,
+        startShuttleIndex: index,
+        startElapsedMs: Math.round(elapsedMs),
+        label: `Level ${shuttle.speedLevel} · ${shuttle.speedKmh.toFixed(1)} km/h`
+      });
+    }
+    elapsedMs += (shuttle.runDurationSeconds + shuttle.recoveryDurationSeconds) * 1000;
+  }
+
+  return options;
 }

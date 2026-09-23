@@ -5,7 +5,7 @@ import {
   type TestSession,
   type TestState
 } from '$lib/domain/models.ts';
-import { getProtocol, type TestType } from '$lib/domain/protocol.ts';
+import { getProtocol, getStartLevelOptions, type TestType } from '$lib/domain/protocol.ts';
 import { deriveRuntime, type RuntimeSnapshot } from '$lib/domain/runtime.ts';
 import { rankAthletes } from '$lib/domain/results.ts';
 import {
@@ -51,6 +51,7 @@ export const athletes = writable<Athlete[]>(createDefaultRoster());
 export const testState = writable<TestState>('idle');
 export const elapsedMs = writable(0);
 export const runtime = writable<RuntimeSnapshot>(blankRuntime('yoyoIR1'));
+export const selectedYoYoStartLevel = writable(5);
 export const soundEnabled = writable(true);
 export const volumeBoost = writable(1);
 export const boostEnabled = writable(true);
@@ -166,6 +167,14 @@ export function setSelectedTestType(type: TestType) {
   elapsedMs.set(0);
 }
 
+export function setSelectedYoYoStartLevel(speedLevel: number) {
+  if (get(testState) !== 'idle') return;
+  const isKnownLevel = getStartLevelOptions(getProtocol('yoyoIR1')).some(
+    (option) => option.speedLevel === speedLevel
+  );
+  if (isKnownLevel) selectedYoYoStartLevel.set(speedLevel);
+}
+
 export function toggleAthleteSelected(id: string) {
   if (get(testState) !== 'idle') return;
   athletes.update((current) =>
@@ -212,13 +221,18 @@ export async function startTest() {
   const selected = get(selectedAthletes);
   if (!selected.length || get(testState) !== 'idle') return;
   const type = get(selectedTestType);
+  const startElapsedMs = type === 'yoyoIR1'
+    ? getStartLevelOptions(getProtocol('yoyoIR1')).find(
+        (option) => option.speedLevel === get(selectedYoYoStartLevel)
+      )?.startElapsedMs ?? 0
+    : 0;
   athletes.update((xs) => xs.map(resetAthleteForTest));
   undoStack.set([]);
   sessionSavedId.set(undefined);
-  elapsedMs.set(0);
-  runtime.set(blankRuntime(type));
+  elapsedMs.set(startElapsedMs);
+  runtime.set(deriveRuntime(getProtocol(type), startElapsedMs));
   lastShuttle = 1;
-  await audioClock.start(type);
+  await audioClock.start(type, startElapsedMs);
   testState.set('running');
   beginTick();
   activeTab.set('live');

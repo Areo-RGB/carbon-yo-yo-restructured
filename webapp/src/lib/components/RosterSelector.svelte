@@ -4,7 +4,7 @@
   import Reset from 'carbon-icons-svelte/lib/Reset.svelte';
   import AthleteAvatar from './AthleteAvatar.svelte';
   import { getAthleteFullName } from '$lib/domain/avatar.ts';
-  import { getProtocol } from '$lib/domain/protocol.ts';
+  import { getProtocol, getStartLevelOptions } from '$lib/domain/protocol.ts';
   import { activeTab, selectedTestType } from '$lib/state/app.ts';
   import {
     addAthlete,
@@ -14,6 +14,8 @@
     resetRoster,
     selectAllAthletes,
     selectedAthletes,
+    selectedYoYoStartLevel,
+    setSelectedYoYoStartLevel,
     startTest,
     testState,
     toggleAthleteSelected
@@ -30,11 +32,17 @@
 
   let newName = $state('');
   const protocol = $derived(getProtocol($selectedTestType));
+  const yoyoStartLevels = getStartLevelOptions(getProtocol('yoyoIR1'));
   const editingLocked = $derived($testState !== 'idle');
 
   function submit() {
     addAthlete(newName);
     newName = '';
+  }
+
+  function handleStartLevelChange(event: Event) {
+    const value = Number((event.currentTarget as HTMLSelectElement).value);
+    setSelectedYoYoStartLevel(value);
   }
 </script>
 
@@ -51,6 +59,32 @@
     </Button>
   </div>
 </Tile>
+
+{#if $selectedTestType === 'yoyoIR1'}
+  <Tile class="section-gap start-level-panel">
+    <div class="start-level-copy">
+      <strong>Starting speed level</strong>
+      <p id="yoyo-start-level-help">
+        Choose where the Yo-Yo audio should begin. Changing this selection does not play audio;
+        press Start when the group is ready.
+      </p>
+    </div>
+    <label class="start-level-control" for="yoyo-start-level">
+      <span>Speed (km/h)</span>
+      <select
+        id="yoyo-start-level"
+        value={$selectedYoYoStartLevel}
+        aria-describedby="yoyo-start-level-help"
+        disabled={editingLocked}
+        onchange={handleStartLevelChange}
+      >
+        {#each yoyoStartLevels as option (option.speedLevel)}
+          <option value={option.speedLevel}>{option.label}</option>
+        {/each}
+      </select>
+    </label>
+  </Tile>
+{/if}
 
 {#if $athletes.length === 0}
   <Tile class="empty-state section-gap">
