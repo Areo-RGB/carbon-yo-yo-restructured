@@ -3,10 +3,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
+  AUDIO_CONFIGS,
   BEEP_LOCAL_PATH,
-  BEEP_REMOTE_URL,
   YOYO_LOCAL_PATH,
-  YOYO_REMOTE_URL,
   beepCacheStore,
   checkAudioCached,
   clearAudioCache,
@@ -14,29 +13,29 @@ import {
   type AudioCacheState
 } from '../src/lib/services/audioCache.ts';
 
-test('Remote URLs match the specified Cloudflare R2 bucket assets', () => {
-  assert.equal(
-    YOYO_REMOTE_URL,
-    'https://pub-7c85e81a76e54ba9ad1dd7277f5a1013.r2.dev/yoyo.m4a'
-  );
+test('audio configs use only bundled app assets', () => {
   assert.equal(YOYO_LOCAL_PATH, './assets/audio/yoyo.m4a');
-  assert.equal(
-    BEEP_REMOTE_URL,
-    'https://pub-7c85e81a76e54ba9ad1dd7277f5a1013.r2.dev/beep_test.m4a'
-  );
   assert.equal(BEEP_LOCAL_PATH, './assets/audio/beep_test.m4a');
+
+  for (const config of Object.values(AUDIO_CONFIGS)) {
+    assert.match(config.localPath, /^\.\/assets\/audio\/.+\.m4a$/);
+    assert.equal('remoteUrl' in config, false);
+    assert.equal('fallbackPath' in config, false);
+  }
 });
 
-test('Yo-Yo and Beep Test audio are bundled in public/assets/audio with valid sizes', () => {
+test('Yo-Yo and Beep Test audio are bundled and trimmed in public/assets/audio', () => {
   const yoyoPath = path.resolve(process.cwd(), 'public/assets/audio/yoyo.m4a');
   assert.ok(fs.existsSync(yoyoPath), 'public/assets/audio/yoyo.m4a must exist');
   const yoyoStat = fs.statSync(yoyoPath);
-  assert.ok(yoyoStat.size > 25_000_000, `Yo-Yo audio should be ~28MB, was ${yoyoStat.size} bytes`);
+  assert.ok(yoyoStat.size > 25_000_000, `Yo-Yo audio should remain high quality, was ${yoyoStat.size} bytes`);
+  assert.ok(yoyoStat.size < 28_084_810, `Yo-Yo audio should exclude its spoken intro, was ${yoyoStat.size} bytes`);
 
   const beepPath = path.resolve(process.cwd(), 'public/assets/audio/beep_test.m4a');
   assert.ok(fs.existsSync(beepPath), 'public/assets/audio/beep_test.m4a must exist');
   const beepStat = fs.statSync(beepPath);
-  assert.ok(beepStat.size > 20_000_000, `Beep audio should be ~21MB, was ${beepStat.size} bytes`);
+  assert.ok(beepStat.size > 20_000_000, `Beep audio should remain high quality, was ${beepStat.size} bytes`);
+  assert.ok(beepStat.size < 21_678_955, `Beep audio should exclude its spoken intro, was ${beepStat.size} bytes`);
 });
 
 test('audio cache stores initialize cleanly and safe functions execute without errors in non-browser environments', async () => {

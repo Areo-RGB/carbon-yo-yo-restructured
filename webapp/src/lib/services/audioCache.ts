@@ -1,22 +1,16 @@
 import { writable } from 'svelte/store';
 import type { TestType } from '$lib/domain/protocol.ts';
 
-export const YOYO_REMOTE_URL = 'https://pub-7c85e81a76e54ba9ad1dd7277f5a1013.r2.dev/yoyo.m4a';
 export const YOYO_LOCAL_PATH = './assets/audio/yoyo.m4a';
-export const YOYO_FALLBACK_PATH = './assets/audio/audio.mp3';
-
-export const BEEP_REMOTE_URL = 'https://pub-7c85e81a76e54ba9ad1dd7277f5a1013.r2.dev/beep_test.m4a';
 export const BEEP_LOCAL_PATH = './assets/audio/beep_test.m4a';
 
-export const CACHE_NAME = 'fitness-audio-cache-v1';
+export const CACHE_NAME = 'fitness-audio-cache-v2';
 const IDB_NAME = 'FitnessAudioDB';
 const IDB_STORE = 'audioBlobs';
 
 export interface AudioItemConfig {
   type: TestType;
-  remoteUrl: string;
   localPath: string;
-  fallbackPath?: string;
   idbKey: string;
   approxSize: number;
   label: string;
@@ -25,19 +19,16 @@ export interface AudioItemConfig {
 export const AUDIO_CONFIGS: Record<TestType, AudioItemConfig> = {
   yoyoIR1: {
     type: 'yoyoIR1',
-    remoteUrl: YOYO_REMOTE_URL,
     localPath: YOYO_LOCAL_PATH,
-    fallbackPath: YOYO_FALLBACK_PATH,
-    idbKey: 'yoyo_ir1_audio',
-    approxSize: 28_084_810,
+    idbKey: 'yoyo_ir1_audio_v2',
+    approxSize: 27_891_366,
     label: 'Yo-Yo IR1'
   },
   beepTest: {
     type: 'beepTest',
-    remoteUrl: BEEP_REMOTE_URL,
     localPath: BEEP_LOCAL_PATH,
-    idbKey: 'beep_test_audio',
-    approxSize: 21_678_955,
+    idbKey: 'beep_test_audio_v2',
+    approxSize: 21_658_736,
     label: 'Beep Test'
   }
 };
@@ -48,7 +39,7 @@ export interface AudioCacheState {
   status: CacheStatus;
   progressPercent: number;
   sizeBytes: number;
-  source: 'cache-api' | 'indexeddb' | 'bundled' | 'remote' | 'unknown';
+  source: 'cache-api' | 'indexeddb' | 'bundled' | 'unknown';
   error?: string;
 }
 
@@ -149,10 +140,7 @@ export async function checkAudioCached(type: TestType = 'yoyoIR1'): Promise<bool
   if ('caches' in window) {
     try {
       const cache = await caches.open(CACHE_NAME);
-      const matched =
-        (await cache.match(config.remoteUrl)) ||
-        (await cache.match(config.localPath)) ||
-        (config.fallbackPath ? await cache.match(config.fallbackPath) : null);
+      const matched = await cache.match(config.localPath);
       if (matched) {
         return true;
       }
@@ -167,7 +155,7 @@ export async function checkAudioCached(type: TestType = 'yoyoIR1'): Promise<bool
 }
 
 /**
- * Load audio for a given test type from cache, or download from remote/local and cache it.
+ * Load bundled audio for a given test type from cache or the app asset and cache it.
  * Returns an object URL or valid playback src.
  */
 export async function loadAndCacheAudio(
@@ -192,9 +180,7 @@ export async function loadAndCacheAudio(
     if (typeof window !== 'undefined' && 'caches' in window) {
       try {
         const cache = await caches.open(CACHE_NAME);
-        const matched =
-          (await cache.match(config.remoteUrl)) ||
-          (await cache.match(config.localPath));
+        const matched = await cache.match(config.localPath);
         if (matched) {
           const blob = await matched.blob();
           if (blob.size > 1_000_000) {
@@ -234,38 +220,24 @@ export async function loadAndCacheAudio(
       console.warn(`IndexedDB lookup skipped for ${type}:`, err);
     }
 
-    // 3. Download and cache the audio
+    // 3. Read and cache the bundled app asset
     store.update((s) => ({ ...s, status: 'downloading', progressPercent: 0 }));
 
-    // Try remote URL first, then fallback to local bundle
-    const urlsToTry = [config.remoteUrl, config.localPath];
-    if (config.fallbackPath) urlsToTry.push(config.fallbackPath);
-
-    let successfulResponse: Response | null = null;
-    let successfulSource: 'remote' | 'bundled' = 'remote';
-
-    for (const url of urlsToTry) {
-      try {
-        const res = await fetch(url);
-        if (res.ok) {
-          successfulResponse = res;
-          successfulSource = url === config.remoteUrl ? 'remote' : 'bundled';
-          break;
-        }
-      } catch (e) {
-        console.warn(`Fetch failed for ${url}:`, e);
-      }
-    }
-
-    if (!successfulResponse) {
-      const errorMsg = `Failed to load ${config.label} audio from remote or local bundle.`;
+    let successfulResponse: Response;
+    try {
+      const response = await fetch(config.localPath);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      successfulResponse = response;
+    } catch (error) {
+      const errorMsg = `Failed to load bundled ${config.label} audio.`;
       store.set({
         status: 'error',
         progressPercent: 0,
         sizeBytes: 0,
         source: 'unknown',
-        error: errorMsg
+        error: `${errorMsg} ${String(error)}`
       });
+      delete activeDownloadPromises[type];
       return config.localPath;
     }
 
@@ -311,7 +283,6 @@ export async function loadAndCacheAudio(
               'Content-Length': blob.size.toString()
             }
           });
-          await cache.put(config.remoteUrl, cacheResponse.clone());
           await cache.put(config.localPath, cacheResponse);
         } catch (cacheErr) {
           console.warn(`Unable to write to Cache API for ${type}:`, cacheErr);
@@ -331,7 +302,7 @@ export async function loadAndCacheAudio(
         status: 'ready',
         progressPercent: 100,
         sizeBytes: blob.size,
-        source: successfulSource
+        source: 'bundled'
       });
       onProgress?.(100);
       return objectUrl;
@@ -391,7 +362,6 @@ export async function clearAudioCache(type?: TestType): Promise<void> {
       } else {
         const cache = await caches.open(CACHE_NAME);
         const config = AUDIO_CONFIGS[type];
-        await cache.delete(config.remoteUrl);
         await cache.delete(config.localPath);
       }
     } catch {

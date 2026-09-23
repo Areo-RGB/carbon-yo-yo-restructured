@@ -166,7 +166,7 @@
         <div>
           <strong style="font-size: 0.95rem;">Yo-Yo IR1 Protocol Audio</strong>
           <p class="setting-hint" style="margin-top: 0.25rem;">
-            Authoritative audio loaded from Cloudflare R2 and cached offline in browser storage.
+            Bundled in the app and cached locally for faster repeat starts.
           </p>
         </div>
         {#if $yoyoCacheStore.status === 'ready'}
@@ -184,7 +184,7 @@
         <ProgressBar
           value={$yoyoCacheStore.progressPercent}
           max={100}
-          labelText="Downloading Yo-Yo audio..."
+          labelText="Caching bundled Yo-Yo audio..."
           helperText="Caching to browser storage for instant, offline playback"
         />
       {/if}
@@ -205,7 +205,7 @@
           disabled={$yoyoCacheStore.status === 'downloading'}
           on:click={() => void loadAndCacheYoYoAudio()}
         >
-          {$yoyoCacheStore.status === 'ready' ? 'Re-cache audio' : 'Download and cache audio'}
+          {$yoyoCacheStore.status === 'ready' ? 'Re-cache bundled audio' : 'Cache bundled audio'}
         </Button>
       </div>
     </div>
@@ -217,7 +217,7 @@
         <div>
           <strong style="font-size: 0.95rem;">Beep Test Protocol Audio</strong>
           <p class="setting-hint" style="margin-top: 0.25rem;">
-            20 m multistage shuttle audio loaded from Cloudflare R2 and cached offline.
+            Bundled in the app and cached locally for faster repeat starts.
           </p>
         </div>
         {#if $beepCacheStore.status === 'ready'}
@@ -235,7 +235,7 @@
         <ProgressBar
           value={$beepCacheStore.progressPercent}
           max={100}
-          labelText="Downloading Beep Test audio..."
+          labelText="Caching bundled Beep Test audio..."
           helperText="Caching to browser storage for instant, offline playback"
         />
       {/if}
@@ -256,7 +256,7 @@
           disabled={$beepCacheStore.status === 'downloading'}
           on:click={() => void loadAndCacheBeepAudio()}
         >
-          {$beepCacheStore.status === 'ready' ? 'Re-cache audio' : 'Download and cache audio'}
+          {$beepCacheStore.status === 'ready' ? 'Re-cache bundled audio' : 'Cache bundled audio'}
         </Button>
       </div>
     </div>

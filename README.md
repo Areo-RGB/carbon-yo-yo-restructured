@@ -48,7 +48,7 @@ Then open the project root in Android Studio and run the `app` configuration.
 https://appassets.androidplatform.net/assets/webapp/index.html
 ```
 
-The URL is served from APK assets using AndroidX `WebViewAssetLoader`. File/content access remains disabled. Internet permission is retained because the web app can still fetch its remote audio fallback.
+The URL is served from APK assets using AndroidX `WebViewAssetLoader`. File/content access remains disabled. Protocol audio is bundled in the APK, so the app does not need network access for playback.
 
 ## Web development
 
