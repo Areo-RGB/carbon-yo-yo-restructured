@@ -1,15 +1,15 @@
 import type { TestType } from '$lib/domain/protocol.ts';
 import {
+  BEEP_TEST_OFFSET_MS,
+  mediaElapsedFromProtocolMs,
+  protocolElapsedFromMediaMs
+} from '$lib/domain/audioTimeline.ts';
+import {
   AUDIO_CONFIGS,
   loadAndCacheAudio
 } from '$lib/services/audioCache.ts';
 
-/**
- * Offset between the Beep Test media timeline and protocol time.
- * The first actual test beep sounds at audio 00:10.215, which is the start
- * of Level 1 Shuttle 1 (test time 00:00.000).
- */
-export const BEEP_TEST_OFFSET_MS = 10_215;
+export { BEEP_TEST_OFFSET_MS } from '$lib/domain/audioTimeline.ts';
 
 /**
  * Protocol clock driven by the protocol audio files:
@@ -103,11 +103,12 @@ export class ProtocolAudioClock {
     this.fallbackStartedAt = performance.now();
     this.playing = true;
 
-    // Seek the media back to the paused protocol position (re-adding the
-    // Beep Test intro offset) so beeps and UI stay aligned after a pause.
-    const audioSeconds = this.mode === 'beepTest'
-      ? (this.fallbackOffsetMs + BEEP_TEST_OFFSET_MS) / 1000
-      : this.fallbackOffsetMs / 1000;
+    // Seek the media back to the paused protocol position so beeps and UI
+    // stay aligned after a pause.
+    const audioSeconds = mediaElapsedFromProtocolMs(
+      this.mode,
+      this.fallbackOffsetMs
+    ) / 1000;
     if (Number.isFinite(audioSeconds) && audioSeconds >= 0) {
       try { this.audio.currentTime = audioSeconds; } catch { /* keep current position */ }
     }
@@ -130,11 +131,7 @@ export class ProtocolAudioClock {
   elapsedMs(): number {
     if (!this.audio.paused && Number.isFinite(this.audio.currentTime)) {
       const audioMs = Math.max(0, this.audio.currentTime * 1000);
-      if (this.mode === 'beepTest') {
-        // Clamp the pre-start intro to test time zero (Level 1 Shuttle 1).
-        return Math.max(0, audioMs - BEEP_TEST_OFFSET_MS);
-      }
-      return audioMs;
+      return protocolElapsedFromMediaMs(this.mode, audioMs);
     }
     return this.fallbackOffsetMs + (this.playing ? performance.now() - this.fallbackStartedAt : 0);
   }
