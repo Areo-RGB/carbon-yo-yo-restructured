@@ -14,7 +14,9 @@
     beepCacheStore,
     loadAndCacheBeepAudio,
     loadAndCacheYoYoAudio,
-    yoyoCacheStore
+    loadAndCacheYoYoIR2Audio,
+    yoyoCacheStore,
+    yoyoIR2CacheStore
   } from '$lib/services/audioCache.ts';
   import {
     boostEnabled,
@@ -206,6 +208,57 @@
           on:click={() => void loadAndCacheYoYoAudio()}
         >
           {$yoyoCacheStore.status === 'ready' ? 'Re-cache bundled audio' : 'Cache bundled audio'}
+        </Button>
+      </div>
+    </div>
+  </Tile>
+
+  <Tile class="section-gap">
+    <div class="setting-stack">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+        <div>
+          <strong style="font-size: 0.95rem;">Yo-Yo IR2 Protocol Audio</strong>
+          <p class="setting-hint" style="margin-top: 0.25rem;">
+            Bundled in the app and cached locally for faster repeat starts.
+          </p>
+        </div>
+        {#if $yoyoIR2CacheStore.status === 'ready'}
+          <Tag type="green">Cached ({($yoyoIR2CacheStore.sizeBytes / (1024 * 1024)).toFixed(1)} MB)</Tag>
+        {:else if $yoyoIR2CacheStore.status === 'downloading'}
+          <Tag type="blue">Downloading ({$yoyoIR2CacheStore.progressPercent}%)</Tag>
+        {:else if $yoyoIR2CacheStore.status === 'error'}
+          <Tag type="red">Error</Tag>
+        {:else}
+          <Tag type="cool-gray">Offline Ready</Tag>
+        {/if}
+      </div>
+
+      {#if $yoyoIR2CacheStore.status === 'downloading'}
+        <ProgressBar
+          value={$yoyoIR2CacheStore.progressPercent}
+          max={100}
+          labelText="Caching bundled Yo-Yo IR2 audio..."
+          helperText="Caching to browser storage for instant, offline playback"
+        />
+      {/if}
+
+      {#if $yoyoIR2CacheStore.error}
+        <InlineNotification
+          kind="error"
+          title="Yo-Yo IR2 Audio Cache Status"
+          subtitle={$yoyoIR2CacheStore.error}
+          lowContrast
+        />
+      {/if}
+
+      <div style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
+        <Button
+          size="small"
+          kind="tertiary"
+          disabled={$yoyoIR2CacheStore.status === 'downloading'}
+          on:click={() => void loadAndCacheYoYoIR2Audio()}
+        >
+          {$yoyoIR2CacheStore.status === 'ready' ? 'Re-cache bundled audio' : 'Cache bundled audio'}
         </Button>
       </div>
     </div>

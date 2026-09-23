@@ -1,4 +1,4 @@
-export type TestType = 'yoyoIR1' | 'beepTest';
+export type TestType = 'yoyoIR1' | 'yoyoIR2' | 'beepTest';
 export type ShuttlePhase = 'running' | 'recovery';
 
 export interface TestShuttle {
@@ -47,12 +47,12 @@ function fitnessRating(distanceMeters: number): string {
   return 'Novice / Needs Improvement';
 }
 
-function createYoYoShuttles(): TestShuttle[] {
+function createYoYoShuttles(stages: Array<[number, number, number]>): TestShuttle[] {
   const list: TestShuttle[] = [];
   let shuttleNumber = 1;
   let distance = 0;
 
-  const addStage = (speedLevel: number, speedKmh: number, shuttleCount: number) => {
+  for (const [speedLevel, speedKmh, shuttleCount] of stages) {
     for (let i = 1; i <= shuttleCount; i += 1) {
       distance += 40;
       list.push({
@@ -67,22 +67,31 @@ function createYoYoShuttles(): TestShuttle[] {
       });
       shuttleNumber += 1;
     }
-  };
-
-  // YYIR1 progression. This intentionally fixes the incorrect Flutter table.
-  addStage(5, 10.0, 1);
-  addStage(9, 12.0, 1);
-  addStage(11, 13.0, 2);
-  addStage(12, 13.5, 3);
-  addStage(13, 14.0, 4);
-
-  let speed = 14.5;
-  for (let level = 14; level <= 23; level += 1) {
-    addStage(level, speed, 8);
-    speed += 0.5;
   }
 
   return list;
+}
+
+function createYoYoIR1Shuttles(): TestShuttle[] {
+  // YYIR1 progression. This intentionally fixes the incorrect Flutter table.
+  const stages: Array<[number, number, number]> = [
+    [5, 10.0, 1], [9, 12.0, 1], [11, 13.0, 2], [12, 13.5, 3], [13, 14.0, 4]
+  ];
+  let speed = 14.5;
+  for (let level = 14; level <= 23; level += 1) {
+    stages.push([level, speed, 8]);
+    speed += 0.5;
+  }
+  return createYoYoShuttles(stages);
+}
+
+function createYoYoIR2Shuttles(): TestShuttle[] {
+  // YYIR2 progression matching the bundled Starts-at-Beep audio.
+  return createYoYoShuttles([
+    [11, 13.0, 1], [15, 15.0, 1], [17, 16.0, 2], [18, 16.5, 3], [19, 17.0, 4],
+    [20, 17.5, 8], [21, 18.0, 8], [22, 18.5, 8], [23, 19.0, 8], [24, 19.5, 8],
+    [25, 20.0, 8], [26, 20.5, 8]
+  ]);
 }
 
 function createBeepShuttles(): TestShuttle[] {
@@ -121,7 +130,8 @@ function createBeepShuttles(): TestShuttle[] {
   return list;
 }
 
-const yoyoShuttles = createYoYoShuttles();
+const yoyoIR1Shuttles = createYoYoIR1Shuttles();
+const yoyoIR2Shuttles = createYoYoIR2Shuttles();
 const beepShuttles = createBeepShuttles();
 
 export const PROTOCOLS: Record<TestType, ProtocolDefinition> = {
@@ -132,10 +142,24 @@ export const PROTOCOLS: Record<TestType, ProtocolDefinition> = {
     description: 'Progressive intermittent 2 × 20 m shuttle test with 10-second active recovery between 40 m repetitions.',
     badges: ['2 × 20m Shuttles', '10s Active Rest', 'Intermittent Recovery'],
     vo2FormulaLabel: 'VO₂max = Distance × 0.0084 + 36.4',
-    shuttles: yoyoShuttles,
-    maxDistanceMeters: yoyoShuttles.at(-1)?.cumulativeDistanceMeters ?? 0,
+    shuttles: yoyoIR1Shuttles,
+    maxDistanceMeters: yoyoIR1Shuttles.at(-1)?.cumulativeDistanceMeters ?? 0,
     calculateVo2Max(distanceMeters: number) {
       return distanceMeters <= 0 ? 0 : round1(distanceMeters * 0.0084 + 36.4);
+    },
+    getFitnessRating: fitnessRating
+  },
+  yoyoIR2: {
+    type: 'yoyoIR2',
+    displayName: 'Yo-Yo IR2',
+    fullName: 'Yo-Yo Intermittent Recovery Level 2',
+    description: 'High-intensity intermittent 2 × 20 m shuttle test with 10-second active recovery between 40 m repetitions.',
+    badges: ['2 × 20m Shuttles', '10s Active Rest', 'High Intensity'],
+    vo2FormulaLabel: 'VO₂max = Distance × 0.0136 + 45.3',
+    shuttles: yoyoIR2Shuttles,
+    maxDistanceMeters: yoyoIR2Shuttles.at(-1)?.cumulativeDistanceMeters ?? 0,
+    calculateVo2Max(distanceMeters: number) {
+      return distanceMeters <= 0 ? 0 : round1(distanceMeters * 0.0136 + 45.3);
     },
     getFitnessRating: fitnessRating
   },

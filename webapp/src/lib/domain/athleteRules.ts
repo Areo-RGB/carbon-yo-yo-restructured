@@ -35,7 +35,7 @@ export function applyMiss(athlete: Athlete, testType: TestType, runtime: Runtime
     };
   }
 
-  // YYIR1: second recorded failure ends the athlete's test. The failures do
+  // Yo-Yo tests: the second recorded failure ends the athlete's test. The failures do
   // not have to be consecutive in the same way as the 20 m shuttle test.
   if (athlete.status === 'warned') return finalizeAthlete(athlete, testType, runtime);
   return {

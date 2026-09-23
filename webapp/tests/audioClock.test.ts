@@ -18,6 +18,10 @@ test('selected Yo-Yo level seeks to its matching audio cue', () => {
   assert.equal(mediaElapsedFromProtocolMs('yoyoIR1', level12.startElapsedMs), level12.startElapsedMs);
 });
 
+test('trimmed Yo-Yo IR2 audio starts at the first protocol beep', () => {
+  assert.equal(mediaElapsedFromProtocolMs('yoyoIR2', 0), 0);
+});
+
 test('trimmed Beep Test audio starts at the first protocol beep', () => {
   assert.equal(mediaElapsedFromProtocolMs('beepTest', 0), 0);
 });

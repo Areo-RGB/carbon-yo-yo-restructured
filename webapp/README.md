@@ -18,6 +18,7 @@ Svelte 5 + TypeScript + Carbon Design System. Runs as a pure web app via Vite â€
 4. Muting changes gain to zero instead of pausing protocol audio.
 5. Saved sessions persist their `testType`.
 6. Result level stored once as `level.shuttle`.
+7. Yo-Yo IR2 uses the bundled high-intensity protocol audio and schedule.
 
 ## Development
 

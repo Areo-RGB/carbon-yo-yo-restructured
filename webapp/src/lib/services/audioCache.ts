@@ -2,6 +2,7 @@ import { writable } from 'svelte/store';
 import type { TestType } from '$lib/domain/protocol.ts';
 
 export const YOYO_LOCAL_PATH = './assets/audio/yoyo.m4a';
+export const YOYO_IR2_LOCAL_PATH = './assets/audio/yoyo_ir2.mp3';
 export const BEEP_LOCAL_PATH = './assets/audio/beep_test.m4a';
 
 export const CACHE_NAME = 'fitness-audio-cache-v2';
@@ -14,6 +15,7 @@ export interface AudioItemConfig {
   idbKey: string;
   approxSize: number;
   label: string;
+  mimeType: string;
 }
 
 export const AUDIO_CONFIGS: Record<TestType, AudioItemConfig> = {
@@ -22,14 +24,24 @@ export const AUDIO_CONFIGS: Record<TestType, AudioItemConfig> = {
     localPath: YOYO_LOCAL_PATH,
     idbKey: 'yoyo_ir1_audio_v2',
     approxSize: 27_891_366,
-    label: 'Yo-Yo IR1'
+    label: 'Yo-Yo IR1',
+    mimeType: 'audio/mp4'
+  },
+  yoyoIR2: {
+    type: 'yoyoIR2',
+    localPath: YOYO_IR2_LOCAL_PATH,
+    idbKey: 'yoyo_ir2_audio_v1',
+    approxSize: 28_747_910,
+    label: 'Yo-Yo IR2',
+    mimeType: 'audio/mpeg'
   },
   beepTest: {
     type: 'beepTest',
     localPath: BEEP_LOCAL_PATH,
     idbKey: 'beep_test_audio_v2',
     approxSize: 21_658_736,
-    label: 'Beep Test'
+    label: 'Beep Test',
+    mimeType: 'audio/mp4'
   }
 };
 
@@ -53,13 +65,16 @@ function initialCacheState(): AudioCacheState {
 }
 
 export const yoyoCacheStore = writable<AudioCacheState>(initialCacheState());
+export const yoyoIR2CacheStore = writable<AudioCacheState>(initialCacheState());
 export const beepCacheStore = writable<AudioCacheState>(initialCacheState());
 
 // Backwards compatibility alias for Yo-Yo cache store
 export const audioCacheStore = yoyoCacheStore;
 
 function getStoreForType(type: TestType) {
-  return type === 'yoyoIR1' ? yoyoCacheStore : beepCacheStore;
+  if (type === 'yoyoIR1') return yoyoCacheStore;
+  if (type === 'yoyoIR2') return yoyoIR2CacheStore;
+  return beepCacheStore;
 }
 
 const inMemoryObjectUrls: Partial<Record<TestType, string>> = {};
@@ -268,7 +283,7 @@ export async function loadAndCacheAudio(
             onProgress?.(percent);
           }
         }
-        blob = new Blob(chunks as BlobPart[], { type: 'audio/mp4' });
+        blob = new Blob(chunks as BlobPart[], { type: config.mimeType });
       } else {
         blob = await successfulResponse.blob();
       }
@@ -279,7 +294,7 @@ export async function loadAndCacheAudio(
           const cache = await caches.open(CACHE_NAME);
           const cacheResponse = new Response(blob, {
             headers: {
-              'Content-Type': 'audio/mp4',
+              'Content-Type': config.mimeType,
               'Content-Length': blob.size.toString()
             }
           });
@@ -329,6 +344,10 @@ export function loadAndCacheYoYoAudio(onProgress?: (percent: number) => void): P
   return loadAndCacheAudio('yoyoIR1', onProgress);
 }
 
+export function loadAndCacheYoYoIR2Audio(onProgress?: (percent: number) => void): Promise<string> {
+  return loadAndCacheAudio('yoyoIR2', onProgress);
+}
+
 export function loadAndCacheBeepAudio(onProgress?: (percent: number) => void): Promise<string> {
   return loadAndCacheAudio('beepTest', onProgress);
 }
@@ -336,6 +355,7 @@ export function loadAndCacheBeepAudio(onProgress?: (percent: number) => void): P
 export async function preloadAllAudio(): Promise<void> {
   await Promise.allSettled([
     loadAndCacheAudio('yoyoIR1'),
+    loadAndCacheAudio('yoyoIR2'),
     loadAndCacheAudio('beepTest')
   ]);
 }
@@ -344,7 +364,7 @@ export async function preloadAllAudio(): Promise<void> {
  * Clear cached audio from Cache API and IndexedDB.
  */
 export async function clearAudioCache(type?: TestType): Promise<void> {
-  const typesToClear: TestType[] = type ? [type] : ['yoyoIR1', 'beepTest'];
+  const typesToClear: TestType[] = type ? [type] : ['yoyoIR1', 'yoyoIR2', 'beepTest'];
 
   for (const t of typesToClear) {
     if (inMemoryObjectUrls[t]) {

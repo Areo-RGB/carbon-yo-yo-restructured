@@ -72,6 +72,12 @@
 		/>
 
 		<HeaderNavItem
+			text="Yo-Yo IR2"
+			isSelected={$selectedTestType === 'yoyoIR2'}
+			on:click={() => changeTestType('yoyoIR2')}
+		/>
+
+		<HeaderNavItem
 			text="Beep Test"
 			isSelected={$selectedTestType === 'beepTest'}
 			on:click={() => changeTestType('beepTest')}

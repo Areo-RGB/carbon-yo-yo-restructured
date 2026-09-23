@@ -65,6 +65,26 @@ test('Yo-Yo runtime boundaries do not award a shuttle before it completes', () =
   assert.equal(secondStarts.currentDistanceMeters, 40);
 });
 
+test('Yo-Yo IR2 matches the bundled high-intensity protocol table', () => {
+  const p = getProtocol('yoyoIR2');
+  assert.equal(p.shuttles.length, 67);
+  assert.equal(p.maxDistanceMeters, 2680);
+
+  assert.deepEqual(
+    getStartLevelOptions(p).map(({ speedLevel, speedKmh, shuttleNumber }) => [speedLevel, speedKmh, shuttleNumber]),
+    [
+      [11, 13.0, 1], [15, 15.0, 2], [17, 16.0, 3], [18, 16.5, 5], [19, 17.0, 8],
+      [20, 17.5, 12], [21, 18.0, 20], [22, 18.5, 28], [23, 19.0, 36], [24, 19.5, 44],
+      [25, 20.0, 52], [26, 20.5, 60]
+    ]
+  );
+  assert.equal(p.shuttles.find((s) => s.speedLevel === 21 && s.shuttleInLevel === 7)?.cumulativeDistanceMeters, 1040);
+});
+
+test('Yo-Yo IR2 duration matches the bundled audio schedule', () => {
+  assert.equal(protocolDurationMs(getProtocol('yoyoIR2')), 1_194_344);
+});
+
 test('Beep Test has the standard 21-level shuttle count represented by this table', () => {
   const p = getProtocol('beepTest');
   assert.equal(p.shuttles.length, 247);
@@ -80,6 +100,9 @@ test('Beep Test has the standard 21-level shuttle count represented by this tabl
 test('VO2 calculations are stable at reference inputs', () => {
   const yoyo = getProtocol('yoyoIR1');
   assert.equal(yoyo.calculateVo2Max(1600), 49.8);
+
+  const yoyoIR2 = getProtocol('yoyoIR2');
+  assert.equal(yoyoIR2.calculateVo2Max(1040), 59.4);
 
   const beep = getProtocol('beepTest');
   assert.equal(beep.calculateVo2Max(1000, 12.0), 50.8);

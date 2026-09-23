@@ -1,4 +1,5 @@
 import type { Athlete, TestSession } from '$lib/domain/models.ts';
+import { getProtocol } from '$lib/domain/protocol.ts';
 
 export function makeCsv(athletes: Athlete[]): string {
   const q = (value: unknown) => `"${String(value ?? '').replaceAll('"', '""')}"`;
@@ -14,7 +15,7 @@ export function makeCsv(athletes: Athlete[]): string {
 
 export function sessionSummary(session: TestSession): string {
   const lines = [
-    `${session.testType === 'yoyoIR1' ? 'Yo-Yo IR1' : 'Beep Test'}: ${session.title}`,
+    `${getProtocol(session.testType).displayName}: ${session.title}`,
     new Date(session.timestampMs).toLocaleString(),
     session.notes ? `Notes: ${session.notes}` : '',
     '---'

@@ -9,7 +9,7 @@
 
   let { testType, onTestTypeChange }: Props = $props();
 
-  const selectedIndex = $derived(testType === 'yoyoIR1' ? 0 : 1);
+  const selectedIndex = $derived(testType === 'yoyoIR1' ? 0 : testType === 'yoyoIR2' ? 1 : 2);
 </script>
 
 <div class="carbon-app-header">
@@ -22,10 +22,11 @@
     {selectedIndex}
     on:change={(e) => {
       const index = e.detail as number;
-      onTestTypeChange(index === 0 ? 'yoyoIR1' : 'beepTest');
+      onTestTypeChange(index === 0 ? 'yoyoIR1' : index === 1 ? 'yoyoIR2' : 'beepTest');
     }}
   >
     <Switch text="Yo-Yo IR1" />
+    <Switch text="Yo-Yo IR2" />
     <Switch text="Beep Test" />
   </ContentSwitcher>
 </div>
